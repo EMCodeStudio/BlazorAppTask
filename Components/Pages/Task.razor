@@ -1,0 +1,223 @@
+﻿@inject TaskService TaskService
+
+@page "/tarea"
+@using BlazorAppTask.Models
+@rendermode InteractiveServer
+<PageTitle>Task</PageTitle>
+
+
+
+
+
+
+@code {
+	private int? taskFormId ;
+	private string? taskFormTitle ;
+	private string? taskFormDescription ;
+
+
+	// Funcion para ejecutar el Servicio de crear una Tarea
+	private void AddTask()
+	{
+		if (taskFormId.HasValue)
+		{
+			TaskService.AddTask(taskFormId.Value, taskFormTitle, taskFormDescription);
+			
+		}
+	}
+
+	void ClearFields()
+	{
+		taskFormId = 0;
+		taskFormTitle = "";
+		taskFormDescription = "";
+	}
+
+
+	private TaskModel ReadTask;
+	// Funcion para ejecutar el Servicio de leer una Tarea
+	private void GetTaskTaskId(int id)
+	{
+		ReadTask = TaskService.GetTaskById(id);
+	}
+
+
+
+	// Funcion para ejecutar el Servicio de actualizar una Tarea
+	private void EditTask()
+	{
+		TaskService.EditTask(ReadTask.Id, ReadTask.Title, ReadTask.Description);
+	}
+
+}
+
+
+
+
+
+
+
+
+
+<div class="task-container container">
+
+<h3>Task ToDo</h3>
+
+	@*Cuadro para ver Tareas terminadas*@
+	<button type="button" class="btn btn-primary position-relative">
+		Tareas
+		<span class="position-absolute top-1 start-100 translate-middle badge rounded-pill bg-danger border border-light">
+			@TaskService.NewTaskItemList.Count(taskListData => taskListData.IsDone)
+			<span class="visually-hidden">unread messages</span>
+		</span>
+	</button>
+
+
+	@*Campos y botones para agregar Tareas*@
+	<div class="row">
+		<div class="mt-2 col-lg-2">
+			<input @bind="taskFormId" class="form-control" type="number" placeholder="Id" aria-label="input task">
+		</div>
+		<div class="mt-2 col-lg-6">
+			<input @bind="taskFormTitle" class="form-control" type="text" placeholder="Titulo" aria-label="input task">
+		</div>
+		<div class="mt-2 col-lg-8">
+			<input @bind="taskFormDescription" class="form-control" type="text" placeholder="Descripcion" aria-label="input task">
+		</div>
+
+		<div class="row">
+
+		<div class="my-3 col-lg-6">
+			<button @onclick="AddTask" class="btn btn-success btn-md"><i class="bi bi-plus-circle-fill"/> Agregar Tarea </button>
+		</div>
+		<div class="my-3 col-lg-6">
+				<button @onclick="ClearFields" class="btn btn-outline-secondary btn-md"><i class="bi bi-x-circle-fill" /> Limpiar Campos</button>
+
+		</div>
+
+		</div>
+	</div>
+
+
+	@*Lista para ver Tareas*@
+	<div class="row">
+
+		@foreach (var taskListData in TaskService.NewTaskItemList)
+		{
+			<div class="m-3 border border-info col-xs-6 col-sm-4 col-md-3 col-lg-2">
+
+				<div class="my-4">
+
+					<div>
+					<label>
+						ID
+						<span class="bg-light border border-info text-black  rounded-pill " style="padding:0 6px 2px">
+
+							@taskListData.Id
+						</span>
+					</label>
+
+					<br />
+
+					<div class="list-group list-group-horizontal">
+
+							<div class="custom-control custom-checkbox mr-sm-2">
+								<input type="checkbox" class="custom-control-input" id="@taskListData.Id">
+								<label class="custom-control-label" for="@taskListData.Id">@taskListData.Title</label>
+							</div>
+
+					</div>
+
+
+
+						
+
+					<br />
+					<label>
+						@taskListData.Description
+					</label>
+					</div>
+
+					<div class="pt-3">
+
+						@*Boton para eliminar Tareas*@
+						<button class="btn btn-outline-danger btn-sm "
+								@onclick="()=> TaskService.RemoveTask(taskListData.Id)">
+							<i class="bi bi-trash" />
+						</button>
+
+						@*Boton para editar Tareas*@
+						<button class="btn btn-outline-warning btn-sm"
+								@onclick="()=> GetTaskTaskId(taskListData.Id)"
+								data-toggle="modal" data-target="#exampleModal"
+								id="editTaskButton">
+							<i class="bi bi-pencil" />
+						</button>
+
+					</div>
+				</div>
+
+			</div>
+
+		}
+	</div>
+
+
+	@if (ReadTask != null)
+	{
+		<div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
+			<div class="modal-dialog" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title" id="exampleModalLabel">New message</h5>
+						<button type="button" class="close" data-dismiss="modal" aria-label="Close">
+							<span aria-hidden="true">&times;</span>
+						</button>
+					</div>
+					<div class="modal-body">
+						<form>
+							<div class="form-group">
+								<label for="recipient-name" class="col-form-label">Titulo:</label>
+								<input @bind="ReadTask.Title" type="text" class="form-control">
+							</div>
+							<div class="form-group">
+								<label for="message-text" class="col-form-label">Descripcion:</label>
+								<textarea @bind="ReadTask.Description" class="form-control"></textarea>
+							</div>
+						</form>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+						<button @onclick="EditTask" type="button" class="btn btn-primary" id="saveChangesButton" data-dismiss="modal">Guardar Cambios</button>
+
+					</div>
+
+				</div>
+			</div>
+		</div>
+
+	}
+
+	<script>
+		$(document).ready(function () {
+			$('#editTaskButton').click(function () {
+				setTimeout(function () {
+					$('#exampleModal').modal('show');
+				}, 200); // Retraso de 200 milisegundos
+			});
+
+			$('#saveChangesButton').click(function () {
+				$('#exampleModal').modal('hide');
+			});
+		});
+
+	</script>
+
+</div>
+
+
+
+
+
+
+	
